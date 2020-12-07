@@ -1,14 +1,11 @@
 import * as vscode from 'vscode';
 import * as AxiosClient from './axiosClient';
 
-const organization = '';
-const repo = '';
-
 export default class GithubActionsProvider implements vscode.TreeDataProvider<vscode.TreeItem> {
   private _onDidChangeTreeData: vscode.EventEmitter<vscode.TreeItem | undefined | null | void> = new vscode.EventEmitter<vscode.TreeItem | undefined | null | void>();
   readonly onDidChangeTreeData: vscode.Event<vscode.TreeItem | undefined | null | void> = this._onDidChangeTreeData.event;
 
-  constructor() {}
+  constructor(public readonly organization:string, public readonly repo:"string") {}
 
   getTreeItem(element: vscode.TreeItem): vscode.TreeItem {
     return element;
@@ -23,14 +20,14 @@ export default class GithubActionsProvider implements vscode.TreeDataProvider<vs
       ]);
     } else {
       if (element instanceof ActionGroup) {
-          const { data } = await AxiosClient.client().get(`/repos/${organization}/${repo}/actions/runs?status=${element.checkStatus}`);
+          const { data } = await AxiosClient.client().get(`/repos/${this.organization}/${this.repo}/actions/runs?status=${element.checkStatus}`);
 
           return data.workflow_runs
             .slice(0, 10)
             .map((run: ActionRun, i: Number) => new ActionRun(run, i === 0));
       } else if (element instanceof ActionRun) {
         const { data } = await AxiosClient.client().get(element.run.jobs_url);
-        return data.jobs.map((job: any) => new ActionJob(job));
+        return data.jobs.map((job: any) => new ActionJob(job, this.organization, this.repo));
       }
     }
 
@@ -64,7 +61,11 @@ class ActionRun extends vscode.TreeItem {
 }
 
 class ActionJob extends vscode.TreeItem {
-  constructor(public readonly job: any) {
+  constructor(
+    public readonly job: any,
+    public readonly organization: string,
+    public readonly repo: string
+  ) {
     super(job.name, vscode.TreeItemCollapsibleState.None);
     this.job = job;
     this.contextValue = "actionJob";
@@ -80,7 +81,7 @@ class ActionJob extends vscode.TreeItem {
   }
 
   async viewLogs(){
-    let uri = vscode.Uri.parse(`githubActions.logProvider:${organization}/${repo}/${this.job.id}`);
+    let uri = vscode.Uri.parse(`githubActions.logProvider:${this.organization}/${this.repo}/${this.job.id}`);
     let doc = await vscode.workspace.openTextDocument(uri);
     vscode.window.showTextDocument(doc, { preview: false });
   }
