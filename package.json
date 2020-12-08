@@ -22,6 +22,10 @@
 			{
 				"command": "githubActions.viewLogs",
 				"title": "Logs"
+			},
+			{
+				"command": "githubActions.openJobInGithub",
+				"title": "Open in GitHub"
 			}
 		],
 		"views": {
@@ -43,7 +47,11 @@
 			"view/item/context": [
 				{
 					"command": "githubActions.viewLogs",
-					"when": "view == githubActions && viewItem == actionJob",
+					"when": "view == githubActions && viewItem == actionJob"
+				},
+				{
+					"command": "githubActions.openJobInGithub",
+					"when": "view == githubActions && viewItem =~ /(action|running)Job/",
 					"group": "inline"
 				}
 			]

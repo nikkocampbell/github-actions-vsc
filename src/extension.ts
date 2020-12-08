@@ -1,5 +1,5 @@
 import * as vscode from 'vscode';
-import GithubActionsProvider from './githubActionsProvider';
+import { GithubActionsProvider, ActionJob } from './githubActionsProvider';
 import ActionsLogProvider from './actionsLogProvider';
 import * as AxiosClient from './axiosClient';
 import { exec } from 'child_process';
@@ -65,8 +65,11 @@ export async function activate(context: vscode.ExtensionContext) {
 	vscode.commands.registerCommand('githubActions.refreshEntries', () =>
 		githubActionsProvider.refresh()
 	);
-	vscode.commands.registerCommand('githubActions.viewLogs', (actionJob) =>
+	vscode.commands.registerCommand('githubActions.viewLogs', (actionJob:ActionJob) =>
 		actionJob.viewLogs()
+	);
+	vscode.commands.registerCommand('githubActions.openJobInGithub', (actionJob:ActionJob) =>
+		actionJob.openInGithub()
 	);
 
 	const myProvider = new ActionsLogProvider();

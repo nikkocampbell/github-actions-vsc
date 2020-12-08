@@ -1,11 +1,11 @@
 import * as vscode from 'vscode';
 import * as AxiosClient from './axiosClient';
 
-export default class GithubActionsProvider implements vscode.TreeDataProvider<vscode.TreeItem> {
+export class GithubActionsProvider implements vscode.TreeDataProvider<vscode.TreeItem> {
   private _onDidChangeTreeData: vscode.EventEmitter<vscode.TreeItem | undefined | null | void> = new vscode.EventEmitter<vscode.TreeItem | undefined | null | void>();
   readonly onDidChangeTreeData: vscode.Event<vscode.TreeItem | undefined | null | void> = this._onDidChangeTreeData.event;
 
-  constructor(public readonly organization:string, public readonly repo:"string") {}
+  constructor(public readonly organization:string, public readonly repo:string) {}
 
   getTreeItem(element: vscode.TreeItem): vscode.TreeItem {
     return element;
@@ -27,7 +27,12 @@ export default class GithubActionsProvider implements vscode.TreeDataProvider<vs
             .map((run: ActionRun, i: Number) => new ActionRun(run, i === 0));
       } else if (element instanceof ActionRun) {
         const { data } = await AxiosClient.client().get(element.run.jobs_url);
-        return data.jobs.map((job: any) => new ActionJob(job, this.organization, this.repo));
+        return data.jobs.map((job: any) => new ActionJob(
+          job,
+          this.organization,
+          this.repo,
+          element.run.status === 'in_progress'
+        ));
       }
     }
 
@@ -39,7 +44,7 @@ export default class GithubActionsProvider implements vscode.TreeDataProvider<vs
   }
 }
 
-class ActionGroup extends vscode.TreeItem {
+export class ActionGroup extends vscode.TreeItem {
   constructor(
     public readonly label: string,
     public readonly checkStatus: string
@@ -49,7 +54,7 @@ class ActionGroup extends vscode.TreeItem {
   }
 }
 
-class ActionRun extends vscode.TreeItem {
+export class ActionRun extends vscode.TreeItem {
   constructor(
     public readonly run: any,
     public readonly expanded: boolean = true
@@ -60,17 +65,18 @@ class ActionRun extends vscode.TreeItem {
   }
 }
 
-class ActionJob extends vscode.TreeItem {
+export class ActionJob extends vscode.TreeItem {
   constructor(
     public readonly job: any,
     public readonly organization: string,
-    public readonly repo: string
+    public readonly repo: string,
+    running: boolean
   ) {
     super(job.name, vscode.TreeItemCollapsibleState.None);
     this.job = job;
-    this.contextValue = "actionJob";
+    this.contextValue = running ? 'runningJob' : 'actionJob';
 
-    if (job.status !== "in_progress") {
+    if (job.status !== 'in_progress') {
       const duration = new Date(job.completed_at).getTime() - new Date(job.started_at).getTime();
       const durationMinutes = Math.floor(duration / 60000);
       const durationSeconds = Math.floor(duration / 1000) % 60;
@@ -80,9 +86,15 @@ class ActionJob extends vscode.TreeItem {
     }
   }
 
-  async viewLogs(){
+  async viewLogs() {
     let uri = vscode.Uri.parse(`githubActions.logProvider:${this.organization}/${this.repo}/${this.job.id}`);
     let doc = await vscode.workspace.openTextDocument(uri);
     vscode.window.showTextDocument(doc, { preview: false });
+  }
+
+  openInGithub() {
+    vscode.env.openExternal(vscode.Uri.parse(
+      `https://github.com/${this.organization}/${this.repo}/runs/${this.job.id}`
+    ));
   }
 }
