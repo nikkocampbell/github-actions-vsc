@@ -59,7 +59,7 @@ export class ActionRun extends vscode.TreeItem {
     public readonly run: any,
     public readonly expanded: boolean = true
   ) {
-    super(run.name, expanded ? vscode.TreeItemCollapsibleState.Expanded : vscode.TreeItemCollapsibleState.Collapsed);
+    super(`${run.name} (${run.head_branch})`, expanded ? vscode.TreeItemCollapsibleState.Expanded : vscode.TreeItemCollapsibleState.Collapsed);
     this.run = run;
     this.description = run.head_commit.message;
   }
@@ -72,7 +72,7 @@ export class ActionJob extends vscode.TreeItem {
     public readonly repo: string,
     running: boolean
   ) {
-    super(job.name, vscode.TreeItemCollapsibleState.None);
+    super(`${formatDate(job.started_at)}: ${job.name}`, vscode.TreeItemCollapsibleState.None);
     this.job = job;
     this.contextValue = running ? 'runningJob' : 'actionJob';
 
@@ -98,3 +98,12 @@ export class ActionJob extends vscode.TreeItem {
     ));
   }
 }
+
+const formatDate = (timestamp: string): string => {
+  return new Date(timestamp).toLocaleString('en-CA', {
+    month: 'short',
+    day: 'numeric',
+    hour: 'numeric',
+    minute: 'numeric'
+  });
+};
