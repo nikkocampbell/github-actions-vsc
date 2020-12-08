@@ -11,9 +11,22 @@ export async function activate(context: vscode.ExtensionContext) {
 	let apiKey = context.globalState.get<string>('gh-actions/apiKey');
 
 	if (!apiKey) {
+
+		const yesNo = await vscode.window.showQuickPick(['Yes', 'No'], {
+			ignoreFocusOut: true,
+			canPickMany: false,
+			placeHolder: 'GitHub Actions VS Code needs a personal access token. Go to GitHub now?'
+		});
+
+		if (yesNo === 'Yes') {
+			vscode.env.openExternal(vscode.Uri.parse(
+				'https://github.com/settings/tokens/new?description=GitHub%20Actions%20VS%20Code&scopes=repo,workflow'
+			));
+		}
+
 		apiKey = await vscode.window.showInputBox({
-			prompt: "Enter a GitHub personal access token",
-			placeHolder: "Token",
+			prompt: 'Enter a GitHub personal access token',
+			placeHolder: 'Token',
 			ignoreFocusOut: true
 		});
 

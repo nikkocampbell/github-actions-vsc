@@ -1,6 +1,7 @@
 {
-	"name": "gh-actions",
-	"displayName": "gh-actions",
+	"name": "github-actions-vsc",
+	"displayName": "GitHub Actions VS Code",
+	"publisher": "Nikko",
 	"description": "",
 	"version": "0.0.1",
 	"engines": {
