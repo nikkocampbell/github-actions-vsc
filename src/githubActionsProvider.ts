@@ -4,8 +4,19 @@ import * as AxiosClient from './axiosClient';
 export class GithubActionsProvider implements vscode.TreeDataProvider<vscode.TreeItem> {
   private _onDidChangeTreeData: vscode.EventEmitter<vscode.TreeItem | undefined | null | void> = new vscode.EventEmitter<vscode.TreeItem | undefined | null | void>();
   readonly onDidChangeTreeData: vscode.Event<vscode.TreeItem | undefined | null | void> = this._onDidChangeTreeData.event;
+  // private interval;
 
-  constructor(public readonly organization:string, public readonly repo:string) {}
+  private actionGroups:ActionGroup[] = [
+    new ActionGroup('Running', 'in_progress'),
+    new ActionGroup('Successful', 'success'),
+    new ActionGroup('Failed', 'failure'),
+  ];
+
+  constructor(public readonly organization:string, public readonly repo:string) {
+    const i = setInterval(() => {
+      this._onDidChangeTreeData.fire(this.actionGroups[0]);
+    }, 30000);
+  }
 
   getTreeItem(element: vscode.TreeItem): vscode.TreeItem {
     return element;
@@ -13,11 +24,7 @@ export class GithubActionsProvider implements vscode.TreeDataProvider<vscode.Tre
 
   async getChildren(element?: vscode.TreeItem): Promise<vscode.TreeItem[]> {
     if (!element) {
-      return Promise.resolve([
-        new ActionGroup('Running', 'in_progress'),
-        new ActionGroup('Successful', 'success'),
-        new ActionGroup('Failed', 'failure'),
-      ]);
+      return Promise.resolve(this.actionGroups);
     } else {
       if (element instanceof ActionGroup) {
           const { data } = await AxiosClient.client().get(`/repos/${this.organization}/${this.repo}/actions/runs?status=${element.checkStatus}`);
